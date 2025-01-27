@@ -13,10 +13,12 @@ A command-line application from scratch to manage a company's employee database,
 * [Tests](#tests)
 
 ## Installation
-To install necessary packages please run following command:
-node server.js
+type npm run start in terminal and then it will trigger the menu
 ## usage
-(screenshot image or video will go here)
+This is my github link
+https://github.com/maritzadiaz77/EmployeeTrackerrr 
+youtubelink
+https://youtu.be/OcOGOc3yohc?si=TH_vTKg5xS45YGsL 
 ## contributors
 Class activities and tutoring
 ## tests

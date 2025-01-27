@@ -1,6 +1,6 @@
 // importing package files
 const inquirer = require("inquirer");
-const { pool } = require("pg");
+const { Pool } = require("pg");
 const utils = require("util");
 
 // Encryption for env file, need help with this part
@@ -11,7 +11,7 @@ const dbUser = process.env.DB_USER;
 const dbPassword = process.env.DB_PASSWORD;
 const dbName = process.env.DB_NAME;
 
-const db = new pool({
+const db = new Pool({
   host: "localhost",
   user: process.env.DB_USER,
   password: "password",
@@ -23,8 +23,8 @@ db.on("error", (err) => {
   console.log("- STATS Mysql2 connection died:", err);
 });
 // empty variables for query returns and prompt responses
-let returnedRowsFromDb = [];
-let returnedOutputFromInq = [];
+// const returnedRowsFromDb = [];
+// c returnedOutputFromInq = [];
 
 const menu = async () => {
   const answers = await inquirer.prompt([
@@ -55,7 +55,7 @@ const menu = async () => {
 
     // role id, job title, department value, salary value
     case "View All Roles":
-      returnedRowsFromDb = await db.query(`
+      const returnedRolesFromDb = await db.query(`
                   SELECT
                       role.id,
                       role.title,
@@ -64,13 +64,13 @@ const menu = async () => {
                   FROM role
                   JOIN department ON role.department_id = department.id
                   `);
-      console.table(returnedRowsFromDb);
+      console.table(returnedRolesFromDb.rows);
       menu();
       break;
 
     // employee id, first name, last name, job title, department, salary and manager
     case "View All Employees":
-      returnedRowsFromDb = await db.query(`
+      const returnedRowsFromDb = await db.query(`
                 SELECT
                     employee.id,
                     employee.first_name,
@@ -84,7 +84,7 @@ const menu = async () => {
                 JOIN department ON role.department_id = department.id
                 JOIN employee manager_table ON employee.manager_id = manager_table.id
                 `);
-      console.table(returnedRowsFromDb);
+      console.table(returnedRowsFromDb.rows);
       menu();
       break;
     // enter name; department added to db
@@ -109,9 +109,10 @@ const menu = async () => {
 
     // enter name, salary, department; role added to db
     case "Add a Role":
-      const roles = await db.query(
-        "select id as value,title as name from role"
+      const departments = await db.query(
+        "select id as value,name from department"
       );
+      // console.log(departments);
       // Prompt user for values needed for new Role
       returnedOutputFromInq = await inquirer.prompt([
         {
@@ -126,7 +127,7 @@ const menu = async () => {
           type: "list",
           name: "roleDpt",
           message: "Enter New Role Department:",
-          choices: roles,
+          choices: departments.rows,
         },
       ]);
       // Destructure returnedOutputFromInq
@@ -182,23 +183,24 @@ const menu = async () => {
       break;
     // select employee, update role; updated in db
     case "Update an Employee Role":
-      currentEmployees = await db.query(`
+      const currentEmployees = await db.query(`
                 SELECT id, first_name, last_name FROM employee;`);
-      currentRoles = await db.query(`
+
+      const currentRoles = await db.query(`
                 SELECT id, title FROM role;`);
-      const employeeList = currentEmployees[0].map((employee) => {
+      const employeeList = currentEmployees.rows.map((employee) => {
         return {
           name: `${employee["first_name"]} ${employee.last_name}`,
           value: employee.id,
         };
       });
-      const roleList = currentRoles[0].map((role) => {
+      const roleList = currentRoles.rows.map((role) => {
         return {
           name: role.title,
           value: role.id,
         };
       });
-      returnedOutputFromInq = await inquirer.prompt([
+      const returnedOutputFromInq = await inquirer.prompt([
         {
           type: "list",
           name: "employeeId",
@@ -215,18 +217,19 @@ const menu = async () => {
       console.log(returnedOutputFromInq);
 
       // Run the update query here:
-      returnedRowsFromDb = await db.query(`
+      const returnedUpdatedEmployeeFromDb = await db.query(`
                     UPDATE employee
                     SET role_id = ${returnedOutputFromInq.newRole}
                     WHERE employee.id = ${returnedOutputFromInq.employeeId};`);
-
+      menu();
       break;
+    default:
   }
 };
-menu();
+
 async function viewDepartments() {
   const departments = await db.query("select* from department");
-  console.table(departments);
+  console.table(departments.rows);
   menu();
 }
 function userPrompt() {
@@ -262,3 +265,4 @@ function userPrompt() {
 }
 
 // userPrompt();
+menu();
